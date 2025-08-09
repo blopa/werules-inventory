@@ -34,7 +34,7 @@ $lowStockProducts = $block->getLowStockProducts();
             <?php foreach ($lowStockProducts as $product): ?>
                 <tr>
                     <td><?php echo $block->escapeHtml($product['name']); ?></td>
-                    <td><?php echo $block->escapeHtml($product['category']); ?></td>
+                    <td><?php echo $block->escapeHtml($product['categories'] ?? ''); ?></td>
                     <td>
                         <?php if ($product['status'] === 'Critical'): ?>
                             <span class="stock-critical"><?php echo $product['current_stock'] . ' ' . __('units'); ?></span>
