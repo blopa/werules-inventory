@@ -15,24 +15,24 @@ class Cost extends Template
     protected $productCollectionFactory;
 
     /**
-     * @var StockStateInterface
+     * @var GetSalableQuantityDataBySkuInterface
      */
-    protected $stockState;
+    protected $_getSalableQuantityDataBySku;
 
     /**
-     * @param Context $context
+     * @param Template\Context $context
      * @param CollectionFactory $productCollectionFactory
-     * @param StockStateInterface $stockState
+     * @param GetSalableQuantityDataBySkuInterface $getSalableQuantityDataBySku
      * @param array $data
      */
     public function __construct(
-        Context $context,
+        Template\Context $context,
         CollectionFactory $productCollectionFactory,
-        StockStateInterface $stockState,
+        GetSalableQuantityDataBySkuInterface $getSalableQuantityDataBySku,
         array $data = []
     ) {
-        $this->productCollectionFactory = $productCollectionFactory;
-        $this->stockState = $stockState;
+        $this->_productCollectionFactory = $productCollectionFactory;
+        $this->_getSalableQuantityDataBySku = $getSalableQuantityDataBySku;
         parent::__construct($context, $data);
     }
 
@@ -42,17 +42,21 @@ class Cost extends Template
     public function getTotalCost()
     {
         $totalCost = 0;
-        $collection = $this->productCollectionFactory->create();
-        $collection->addAttributeToSelect(['name', 'price', 'cost', 'stock_status']);
-        $collection->addAttributeToFilter('stock_status', 93);
+        $collection = $this->_productCollectionFactory->create();
+        $collection->addAttributeToSelect(['cost', 'stock_status', 'sku']);
+        $collection->addAttributeToFilter('stock_status', ['eq' => 93]);
 
         foreach ($collection as $product) {
-            $stockQty = $this->stockState->getStockQty($product->getId(), $product->getStore()->getWebsiteId());
-            if ($stockQty > 0) {
-                $totalCost += $product->getCost() * $stockQty;
+            $salableQty = 0;
+            $salableQuantityData = $this->_getSalableQuantityDataBySku->execute($product->getSku());
+            foreach ($salableQuantityData as $stockData) {
+                $salableQty += $stockData['qty'];
+            }
+
+            if ($salableQty > 0) {
+                $totalCost += $product->getCost() * $salableQty;
             }
         }
-
         return $totalCost;
     }
 }

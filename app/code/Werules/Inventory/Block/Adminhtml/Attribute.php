@@ -2,31 +2,34 @@
 
 namespace Werules\Inventory\Block\Adminhtml;
 
-use Magento\Backend\Block\Template;
-use Magento\Backend\Block\Template\Context;
-use Magento\Catalog\Model\ResourceModel\Product\Attribute\CollectionFactory as AttributeCollectionFactory;
-use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
+use Magento\Framework\View\Element\Template;
+use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
+use Magento\Catalog\Model\ResourceModel\Eav\Attribute as EavAttribute;
+use Magento\InventorySalesApi\Api\GetSalableQuantityDataBySkuInterface;
 
 class Attribute extends Template
 {
-    protected $_attributeCollectionFactory;
     protected $_productCollectionFactory;
+    protected $_attributeCollection;
+    protected $_getSalableQuantityDataBySku;
 
     public function __construct(
-        Context $context,
-        AttributeCollectionFactory $attributeCollectionFactory,
-        ProductCollectionFactory $productCollectionFactory,
+        Template\Context $context,
+        CollectionFactory $productCollectionFactory,
+        EavAttribute $attributeCollection,
+        GetSalableQuantityDataBySkuInterface $getSalableQuantityDataBySku,
         array $data = []
     ) {
-        $this->_attributeCollectionFactory = $attributeCollectionFactory;
         $this->_productCollectionFactory = $productCollectionFactory;
+        $this->_attributeCollection = $attributeCollection;
+        $this->_getSalableQuantityDataBySku = $getSalableQuantityDataBySku;
         parent::__construct($context, $data);
     }
 
     public function getFilterableAttributes()
     {
-        $collection = $this->_attributeCollectionFactory->create();
-        $collection->addIsFilterableFilter();
+        $collection = $this->_attributeCollection->getCollection();
+        $collection->addFieldToFilter('is_filterable', 1);
         return $collection;
     }
 
@@ -42,32 +45,30 @@ class Attribute extends Template
             return [];
         }
 
-        $costs = [];
-        $productCollection = $this->_productCollectionFactory->create();
-        $productCollection->addAttributeToSelect([$attributeCode, 'cost', 'stock_status'])
-            ->addAttributeToFilter('stock_status', 93)
-            ->joinField(
-                'qty',
-                'cataloginventory_stock_item',
-                'qty',
-                'product_id=entity_id',
-                '{{table}}.stock_id=1',
-                'left'
-            );
+        $attributeCosts = [];
+        $collection = $this->_productCollectionFactory->create();
+        $collection->addAttributeToSelect(['cost', 'stock_status', 'sku', $attributeCode]);
+        $collection->addAttributeToFilter('stock_status', ['eq' => 93]);
 
-        foreach ($productCollection as $product) {
-            $attributeValue = $product->getAttributeText($attributeCode);
-            if ($attributeValue) {
-                $stockQty = $product->getQty();
-                if ($stockQty > 0 && $product->getCost()) {
-                    if (!isset($costs[$attributeValue])) {
-                        $costs[$attributeValue] = 0;
+        foreach ($collection as $product) {
+            $salableQty = 0;
+            $salableQuantityData = $this->_getSalableQuantityDataBySku->execute($product->getSku());
+            foreach ($salableQuantityData as $stockData) {
+                $salableQty += $stockData['qty'];
+            }
+
+            if ($salableQty > 0) {
+                $attributeValue = $product->getAttributeText($attributeCode);
+                if ($attributeValue) {
+                    if (!isset($attributeCosts[$attributeValue])) {
+                        $attributeCosts[$attributeValue] = 0;
                     }
-                    $costs[$attributeValue] += $product->getCost() * $stockQty;
+                    $attributeCosts[$attributeValue] += $product->getCost() * $salableQty;
                 }
             }
         }
-        ksort($costs);
-        return $costs;
+
+        ksort($attributeCosts);
+        return $attributeCosts;
     }
 }

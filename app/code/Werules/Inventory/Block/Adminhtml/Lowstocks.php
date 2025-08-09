@@ -2,28 +2,27 @@
 
 namespace Werules\Inventory\Block\Adminhtml;
 
-use Magento\Backend\Block\Template;
-use Magento\Backend\Block\Template\Context;
+use Magento\Framework\View\Element\Template;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
-use Magento\CatalogInventory\Api\StockStateInterface;
 use Magento\Catalog\Model\CategoryFactory;
+use Magento\InventorySalesApi\Api\GetSalableQuantityDataBySkuInterface;
 
 class Lowstocks extends Template
 {
     protected $_productCollectionFactory;
-    protected $_stockState;
     protected $_categoryFactory;
+    protected $_getSalableQuantityDataBySku;
 
     public function __construct(
-        Context $context,
+        Template\Context $context,
         CollectionFactory $productCollectionFactory,
-        StockStateInterface $stockState,
         CategoryFactory $categoryFactory,
+        GetSalableQuantityDataBySkuInterface $getSalableQuantityDataBySku,
         array $data = []
     ) {
         $this->_productCollectionFactory = $productCollectionFactory;
-        $this->_stockState = $stockState;
         $this->_categoryFactory = $categoryFactory;
+        $this->_getSalableQuantityDataBySku = $getSalableQuantityDataBySku;
         parent::__construct($context, $data);
     }
 
@@ -31,38 +30,53 @@ class Lowstocks extends Template
     {
         $lowStockProducts = [];
         $collection = $this->_productCollectionFactory->create();
-        $collection->addAttributeToSelect(['name', 'cost', 'category_ids']);
-        $collection->joinTable(
-            ['stock_item' => 'cataloginventory_stock_item'],
-            'product_id=entity_id',
-            ['qty', 'notify_stock_qty'],
-            '{{table}}.stock_id=1',
-            'left'
-        );
-        $collection->getSelect()->where('stock_item.qty < stock_item.notify_stock_qty');
+        $collection->addAttributeToSelect(['name', 'cost', 'category_ids', 'sku']);
 
         foreach ($collection as $product) {
-            $currentStock = $product->getQty();
-            $status = ($currentStock <= 2) ? 'Critical' : 'Low';
-            $categoryNames = [];
-            $categoryIds = $product->getCategoryIds();
-            if ($categoryIds) {
-                foreach ($categoryIds as $categoryId) {
-                    $category = $this->_categoryFactory->create()->load($categoryId);
-                    $categoryNames[] = $category->getName();
-                }
+            $salableQty = 0;
+            $salableQuantityData = $this->_getSalableQuantityDataBySku->execute($product->getSku());
+            foreach ($salableQuantityData as $stockData) {
+                $salableQty += $stockData['qty'];
             }
 
-            $lowStockProducts[] = [
-                'name' => $product->getName(),
-                'category' => implode(', ', $categoryNames),
-                'current_stock' => (int)$currentStock,
-                'reorder_level' => (int)$product->getNotifyStockQty(),
-                'unit_cost' => $product->getCost(),
-                'status' => $status
-            ];
+            if ($salableQty > 0) {
+                $status = $this->getStockStatus($salableQty);
+                if ($status !== 'In Stock') {
+                    $lowStockProducts[] = [
+                        'name' => $product->getName(),
+                        'categories' => $this->getProductCategories($product->getCategoryIds()),
+                        'current_stock' => $salableQty,
+                        'reorder_level' => 'N/A',
+                        'unit_cost' => $product->getCost(),
+                        'status' => $status
+                    ];
+                }
+            }
         }
 
         return $lowStockProducts;
+    }
+
+    public function getProductCategories($categoryIds)
+    {
+        $categoryNames = [];
+        foreach ($categoryIds as $categoryId) {
+            $category = $this->_categoryFactory->create()->load($categoryId);
+            $categoryNames[] = $category->getName();
+        }
+        return implode(', ', $categoryNames);
+    }
+
+    public function getStockStatus($currentStock)
+    {
+        if ($currentStock >= 1 && $currentStock <= 2) {
+            return 'Critical';
+        }
+
+        if ($currentStock >= 3 && $currentStock <= 5) {
+            return 'Low';
+        }
+
+        return 'In Stock';
     }
 }

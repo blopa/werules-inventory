@@ -2,49 +2,54 @@
 
 namespace Werules\Inventory\Block\Adminhtml\Category;
 
-use Magento\Backend\Block\Template;
-use Magento\Backend\Block\Template\Context;
-use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
+use Magento\Framework\View\Element\Template;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
-use Magento\CatalogInventory\Api\StockStateInterface;
+use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
+use Magento\InventorySalesApi\Api\GetSalableQuantityDataBySkuInterface;
 
 class Overview extends Template
 {
-    protected $_categoryCollectionFactory;
     protected $_productCollectionFactory;
-    protected $_stockState;
+    protected $_categoryCollectionFactory;
+    protected $_getSalableQuantityDataBySku;
 
     public function __construct(
-        Context $context,
-        CategoryCollectionFactory $categoryCollectionFactory,
+        Template\Context $context,
         ProductCollectionFactory $productCollectionFactory,
-        StockStateInterface $stockState,
+        CategoryCollectionFactory $categoryCollectionFactory,
+        GetSalableQuantityDataBySkuInterface $getSalableQuantityDataBySku,
         array $data = []
     ) {
-        $this->_categoryCollectionFactory = $categoryCollectionFactory;
         $this->_productCollectionFactory = $productCollectionFactory;
-        $this->_stockState = $stockState;
+        $this->_categoryCollectionFactory = $categoryCollectionFactory;
+        $this->_getSalableQuantityDataBySku = $getSalableQuantityDataBySku;
         parent::__construct($context, $data);
     }
 
     public function getCategoryInventoryCosts()
     {
         $categoryCosts = [];
-        $categoryCollection = $this->_categoryCollectionFactory->create()
+        $mainCategories = $this->_categoryCollectionFactory->create()
             ->addAttributeToSelect('name')
-            ->addAttributeToFilter('level', 2); // Main categories
+            ->addAttributeToFilter('level', 2)
+            ->addAttributeToFilter('is_active', 1);
 
-        foreach ($categoryCollection as $category) {
+        foreach ($mainCategories as $category) {
             $totalCost = 0;
-            $productCollection = $this->_productCollectionFactory->create();
-            $productCollection->addCategoryFilter($category)
-                ->addAttributeToSelect(['cost', 'stock_status'])
-                ->addAttributeToFilter('stock_status', 93);
+            $products = $this->_productCollectionFactory->create()
+                ->addAttributeToSelect(['cost', 'stock_status', 'sku'])
+                ->addCategoryFilter($category)
+                ->addAttributeToFilter('stock_status', ['eq' => 93]);
 
-            foreach ($productCollection as $product) {
-                $stockQty = $this->_stockState->getStockQty($product->getId(), $product->getStore()->getWebsiteId());
-                if ($stockQty > 0 && $product->getCost()) {
-                    $totalCost += $product->getCost() * $stockQty;
+            foreach ($products as $product) {
+                $salableQty = 0;
+                $salableQuantityData = $this->_getSalableQuantityDataBySku->execute($product->getSku());
+                foreach ($salableQuantityData as $stockData) {
+                    $salableQty += $stockData['qty'];
+                }
+
+                if ($salableQty > 0) {
+                    $totalCost += $product->getCost() * $salableQty;
                 }
             }
 
