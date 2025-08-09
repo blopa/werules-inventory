@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
     <menu>
-        <add id="Werules_Inventory::total_cost" title="Total Inventory Cost" module="Werules_Inventory" sortOrder="100" parent="Magento_Catalog::catalog_inventory" action="werules_inventory/total/cost" resource="Werules_Inventory::total_cost"/>
+        <add id="Werules_Inventory::total_cost" title="Total Inventory Cost" module="Werules_Inventory" sortOrder="100" parent="Magento_Catalog::catalog" action="werules_inventory/total/cost" resource="Werules_Inventory::total_cost"/>
+        <add id="Werules_Inventory::category_overview" title="Category Overview" module="Werules_Inventory" sortOrder="110" parent="Magento_Catalog::catalog" action="werules_inventory/category/overview" resource="Werules_Inventory::category_overview"/>
     </menu>
 </config>

@@ -1,0 +1,27 @@
+<?php
+/** @var \Werules\Inventory\Block\Adminhtml\Category\Overview $block */
+$categoryCosts = $block->getCategoryInventoryCosts();
+?>
+
+<h1><?php echo __('Category Inventory Cost Overview'); ?></h1>
+
+<?php if (!empty($categoryCosts)): ?>
+    <table class="data-grid">
+        <thead>
+            <tr>
+                <th class="data-grid-th"><?php echo __('Category Name'); ?></th>
+                <th class="data-grid-th"><?php echo __('Total Inventory Cost'); ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($categoryCosts as $categoryCost): ?>
+                <tr>
+                    <td><?php echo $block->escapeHtml($categoryCost['name']); ?></td>
+                    <td><?php echo '<strong>' . $block->escapeHtml($categoryCost['cost']) . '</strong>'; ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+<?php else: ?>
+    <p><?php echo __('No category inventory costs to display.'); ?></p>
+<?php endif; ?>
