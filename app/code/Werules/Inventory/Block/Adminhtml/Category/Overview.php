@@ -5,7 +5,7 @@ namespace Werules\Inventory\Block\Adminhtml\Category;
 use Magento\Framework\View\Element\Template;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
 use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
-use Magento\InventorySalesApi\Api\GetSalableQuantityDataBySkuInterface;
+use Magento\InventorySalesAdminUi\Model\GetSalableQuantityDataBySku;
 
 class Overview extends Template
 {
@@ -17,7 +17,7 @@ class Overview extends Template
         Template\Context $context,
         ProductCollectionFactory $productCollectionFactory,
         CategoryCollectionFactory $categoryCollectionFactory,
-        GetSalableQuantityDataBySkuInterface $getSalableQuantityDataBySku,
+        GetSalableQuantityDataBySku $getSalableQuantityDataBySku,
         array $data = []
     ) {
         $this->_productCollectionFactory = $productCollectionFactory;

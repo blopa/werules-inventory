@@ -3,9 +3,8 @@
 namespace Werules\Inventory\Block\Adminhtml\Total;
 
 use Magento\Backend\Block\Template;
-use Magento\Backend\Block\Template\Context;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
-use Magento\CatalogInventory\Api\StockStateInterface;
+use Magento\InventorySalesAdminUi\Model\GetSalableQuantityDataBySku;
 
 class Cost extends Template
 {
@@ -15,20 +14,20 @@ class Cost extends Template
     protected $productCollectionFactory;
 
     /**
-     * @var GetSalableQuantityDataBySkuInterface
+     * @var GetSalableQuantityDataBySku
      */
     protected $_getSalableQuantityDataBySku;
 
     /**
      * @param Template\Context $context
      * @param CollectionFactory $productCollectionFactory
-     * @param GetSalableQuantityDataBySkuInterface $getSalableQuantityDataBySku
+     * @param GetSalableQuantityDataBySku $getSalableQuantityDataBySku
      * @param array $data
      */
     public function __construct(
         Template\Context $context,
         CollectionFactory $productCollectionFactory,
-        GetSalableQuantityDataBySkuInterface $getSalableQuantityDataBySku,
+        GetSalableQuantityDataBySku $getSalableQuantityDataBySku,
         array $data = []
     ) {
         $this->_productCollectionFactory = $productCollectionFactory;
