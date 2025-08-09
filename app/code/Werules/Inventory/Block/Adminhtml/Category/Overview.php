@@ -38,7 +38,8 @@ class Overview extends Template
             $totalCost = 0;
             $productCollection = $this->_productCollectionFactory->create();
             $productCollection->addCategoryFilter($category)
-                ->addAttributeToSelect(['cost']);
+                ->addAttributeToSelect(['cost', 'stock_status'])
+                ->addAttributeToFilter('stock_status', 93);
 
             foreach ($productCollection as $product) {
                 $stockQty = $this->_stockState->getStockQty($product->getId(), $product->getStore()->getWebsiteId());

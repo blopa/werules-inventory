@@ -43,7 +43,8 @@ class Cost extends Template
     {
         $totalCost = 0;
         $collection = $this->productCollectionFactory->create();
-        $collection->addAttributeToSelect(['name', 'price', 'cost']);
+        $collection->addAttributeToSelect(['name', 'price', 'cost', 'stock_status']);
+        $collection->addAttributeToFilter('stock_status', 93);
 
         foreach ($collection as $product) {
             $stockQty = $this->stockState->getStockQty($product->getId(), $product->getStore()->getWebsiteId());
