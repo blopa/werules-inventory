@@ -1,0 +1,58 @@
+<?php
+/** @var \Werules\Inventory\Block\Adminhtml\Lowstocks $block */
+$lowStockProducts = $block->getLowStockProducts();
+?>
+
+<style>
+    .status-critical { background-color: #ff0000; color: #ffffff; padding: 2px 8px; border-radius: 3px; font-weight: bold; }
+    .status-low { background-color: #f0f0f0; color: #333333; padding: 2px 8px; border-radius: 3px; }
+    .stock-critical { background-color: #ff0000; color: #ffffff; padding: 2px 8px; border-radius: 3px; display: inline-block; }
+</style>
+
+<div class="page-main-actions">
+    <div class="page-actions-inner" data-role="actions">
+        <div class="page-actions-buttons">
+            <h1><span class="icon-warning">&#9888;</span> <?php echo __('Low Stocks'); ?></h1>
+            <p><?php echo __('Products that need immediate attention'); ?></p>
+        </div>
+    </div>
+</div>
+
+<?php if (!empty($lowStockProducts)): ?>
+    <table class="data-grid">
+        <thead>
+            <tr>
+                <th class="data-grid-th"><?php echo __('Product Name'); ?></th>
+                <th class="data-grid-th"><?php echo __('Category'); ?></th>
+                <th class="data-grid-th"><?php echo __('Current Stock'); ?></th>
+                <th class="data-grid-th"><?php echo __('Reorder Level'); ?></th>
+                <th class="data-grid-th"><?php echo __('Unit Cost'); ?></th>
+                <th class="data-grid-th"><?php echo __('Status'); ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($lowStockProducts as $product): ?>
+                <tr>
+                    <td><?php echo $block->escapeHtml($product['name']); ?></td>
+                    <td><?php echo $block->escapeHtml($product['category']); ?></td>
+                    <td>
+                        <?php if ($product['status'] === 'Critical'): ?>
+                            <span class="stock-critical"><?php echo $product['current_stock'] . ' ' . __('units'); ?></span>
+                        <?php else: ?>
+                            <?php echo $product['current_stock'] . ' ' . __('units'); ?>
+                        <?php endif; ?>
+                    </td>
+                    <td><?php echo $block->escapeHtml($product['reorder_level']); ?></td>
+                    <td><?php echo '$' . number_format((float)$product['unit_cost'], 2); ?></td>
+                    <td>
+                        <span class="status-<?php echo strtolower($block->escapeHtml($product['status'])); ?>">
+                            <?php echo $block->escapeHtml($product['status']); ?>
+                        </span>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+<?php else: ?>
+    <p><?php echo __('No low stock products to display.'); ?></p>
+<?php endif; ?>
