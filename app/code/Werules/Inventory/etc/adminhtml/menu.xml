@@ -4,6 +4,5 @@
         <add id="Werules_Inventory::total_cost" title="Total Inventory Cost" module="Werules_Inventory" sortOrder="100" parent="Magento_Catalog::catalog" action="werules_inventory/total/cost" resource="Werules_Inventory::total_cost"/>
         <add id="Werules_Inventory::category_overview" title="Category Overview" module="Werules_Inventory" sortOrder="110" parent="Magento_Catalog::catalog" action="werules_inventory/category/overview" resource="Werules_Inventory::category_overview"/>
         <add id="Werules_Inventory::low_stocks" title="Low Stocks" module="Werules_Inventory" sortOrder="120" parent="Magento_Catalog::catalog" action="werules_inventory/lowstocks/index" resource="Werules_Inventory::low_stocks"/>
-        <add id="Werules_Inventory::attribute" title="Inventory by Attribute" module="Werules_Inventory" sortOrder="130" parent="Magento_Catalog::catalog" action="werules_inventory/attribute/index" resource="Werules_Inventory::attribute"/>
     </menu>
 </config>
