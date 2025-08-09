@@ -1,0 +1,6 @@
+<?php
+/** @var \Werules\Inventory\Block\Adminhtml\Total\Cost $block */
+?>
+
+<h1><?php echo __('Total Inventory Cost'); ?></h1>
+<p><?php echo __('The total cost of all in-stock products is: %1', '<strong>' . $block->getTotalCost() . '</strong>'); ?></p>
